@@ -20,7 +20,7 @@ const getAllSauces = (req, res) => {
 // ---------CREATE SAUCE-----------
 const createSauce = (req, res, next) => {
   const payload = JSON.parse(req.body.sauce);
-  // TODO you need to validate required fields before saving
+
   if (validateSauce(payload)) {
     const sauce = new Sauce({
       userId: payload.userId,
@@ -30,8 +30,8 @@ const createSauce = (req, res, next) => {
       mainPepper : payload.mainPepper,
       imageUrl: `${req.protocol}://${req.get('host')}/images/${req.file.filename}`,
       heat : payload.heat,
-      likes : payload.likes,
-      dislikes : payload.dislikes,
+      likes : 0,
+      dislikes : 0,
       usersLiked : payload.usersLiked,
       usersDisliked : payload.usersDisliked
     });
@@ -70,35 +70,34 @@ const getOneSauce = ('/:id', (req, res, next) => {
     }
   );
 });
-// ---------MODIFY SAUCE-----------
+// // ---------MODIFY SAUCE-----------
+
 const modifySauce = ('/:id', (req, res, next) => {
-  const sauce = new Sauce({
-    _id: req.params.id,
-    userId: req.body.userId,
-    name : req.body.name,
-    manufacturer : req.body.manufacturer,
-    description : req.body.description,
-    mainPepper : req.body.mainPepper,
-    imageUrl : req.body.imageUrl,
-    heat : req.body.heat,
-    likes : req.body.likes,
-    dislikes : req.body.dislikes,
-    usersLiked : req.body.usersLiked,
-    usersDisliked : req.body.usersDisliked
-  });
-  Sauce.updateOne({_id: req.params.id}, sauce).then(
-    () => {
-      res.status(201).json({
-        message: 'Sauce updated successfully!'
-      });
-    }
-  ).catch(
-    (error) => {
-      res.status(400).json({
-        error: error
-      });
-    }
-  );
+  const sauceObject = req.file ? {
+      ...JSON.parse(req.body.sauce),
+      imageUrl: `${req.protocol}://${req.get('host')}/images/${req.file.filename}`
+    } : { ...req.body };
+
+  if (validateSauce(sauceObject) ) {
+    Sauce.findOne({_id: req.params.id})
+        .then((sauce) => {
+           if (sauce.userId != req.auth.userId) {
+               res.status(401).json({ message : 'Not authorized'});
+           } else {
+               Sauce.updateOne({ _id: req.params.id}, { ...sauceObject, _id: req.params.id})
+               .then(() => res.status(200).json({message : 'Object Modified !'}))
+               .catch(error => res.status(401).json({ error }));
+           }
+        })
+       .catch((error) => {
+           res.status(400).json({ error });
+       })
+    
+  } else {
+    res.status(400).json({
+      message: "your sauce is not valid !"
+    });
+  }
 });
 // ---------DELETE SAUCE-----------
 const deleteSauce = ('/:id', (req, res, next) => {
@@ -118,20 +117,6 @@ const deleteSauce = ('/:id', (req, res, next) => {
   .catch( error => {
       res.status(500).json({ error });
   });
-  // Sauce.deleteOne({_id: req.params.id}).then(
-  //   () => {
-
-  //     res.status(200).json({
-  //       message: 'Deleted!'
-  //     });
-  //   }
-  // ).catch(
-  //   (error) => {
-  //     res.status(400).json({
-  //       error: error
-  //     });
-  //   }
-  // );
 });
 
 module.exports = {

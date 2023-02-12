@@ -1,9 +1,17 @@
 require('dotenv').config();
 const express = require('express');
+const helmet = require ('helmet');
+
 const app = express();
+
 const path = require('path');
 
 app.use(express.json());
+app.use(helmet({
+  crossOriginResourcePolicy: false,
+  // crossOriginEmbedderPolicy: false,
+ }
+));
 
 require('./models/dbConfig');
 
