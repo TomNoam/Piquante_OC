@@ -9,7 +9,6 @@ const path = require('path');
 app.use(express.json());
 app.use(helmet({
   crossOriginResourcePolicy: false,
-  // crossOriginEmbedderPolicy: false,
  }
 ));
 

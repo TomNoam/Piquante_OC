@@ -71,28 +71,35 @@ const getOneSauce = ('/:id', (req, res, next) => {
   );
 });
 // // ---------MODIFY SAUCE-----------
-
-const modifySauce = ('/:id', (req, res, next) => {
+const modifySauce = ('/:id', async (req, res, next) => {
   const sauceObject = req.file ? {
       ...JSON.parse(req.body.sauce),
       imageUrl: `${req.protocol}://${req.get('host')}/images/${req.file.filename}`
     } : { ...req.body };
 
   if (validateSauce(sauceObject) ) {
-    Sauce.findOne({_id: req.params.id})
-        .then((sauce) => {
-           if (sauce.userId != req.auth.userId) {
-               res.status(401).json({ message : 'Not authorized'});
-           } else {
-               Sauce.updateOne({ _id: req.params.id}, { ...sauceObject, _id: req.params.id})
-               .then(() => res.status(200).json({message : 'Object Modified !'}))
-               .catch(error => res.status(401).json({ error }));
-           }
-        })
-       .catch((error) => {
-           res.status(400).json({ error });
-       })
-    
+    let sauceFromDb;
+    try {
+      sauceFromDb = await Sauce.findOne({_id: req.params.id});
+    } catch (error) {
+      res.status(404).json({ error });
+      return;
+    }
+    if (sauceFromDb.userId != req.auth.userId) {
+      res.status(401).json({ message : 'Not authorized'});
+      return;
+    }
+    const existingSauceImage = sauceFromDb.imageUrl;
+    try {
+      await Sauce.updateOne({ _id: req.params.id}, { ...sauceObject, _id: req.params.id});
+      res.status(200).json({message : 'Object Modified !'});
+      if (existingSauceImage != sauceObject.imageUrl) {
+        const existingSauceImageFilename = existingSauceImage.split('http://localhost:3000/')[1];
+        fs.unlinkSync(existingSauceImageFilename);
+      }
+    } catch (error) {
+      res.status(500).json({ error });
+    }
   } else {
     res.status(400).json({
       message: "your sauce is not valid !"

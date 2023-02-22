@@ -4,7 +4,6 @@ const validateSauce = (sauce) => {
     const sauceTextInputRegex = new RegExp(/^[ a-zA-ZÀ-úœ'\-\’]{2,25}$/, 'g');
     const sauceDescTextInputRegex = new RegExp(/^[ a-zA-ZÀ-úœ'\-\’]{2,1000}$/, 'g');
 
-
     if(!sauce.userId) {
         isValid = false;
     }
